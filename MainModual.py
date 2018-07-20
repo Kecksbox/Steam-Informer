@@ -2,15 +2,27 @@ import steamScrapper
 import composer
 import youtubeUploader
 
+import debugger_utility as du
+
 params = dict(
     debugging = dict(
-        single_file_mode = 1
+        no_video = 0,
+        no_image = 0,
+        image_cap = 1,
+        video_cap = 1,
+        no_audio = 1,
+        no_composing = 0,
+        no_upload = 0
     )
 )
 
 game_resources = steamScrapper.fetch(262280, params)
 
-#composed_video = composer.compose(game_resources)
+du.run_cleaner(params, game_resources)
+if not du.is_debugging_option_enabled(params, "no_composing"):
+    composed_video = composer.compose(game_resources, params)
 
-#youtubeUploader.upload(composed_video)
+    du.run_cleaner(params, composed_video)
+    if not du.is_debugging_option_enabled(params, "no_upload"):
+        youtubeUploader.upload(composed_video, params)
 

@@ -6,6 +6,8 @@ from bs4 import BeautifulSoup
 from time import sleep
 from tts import generateAudio
 
+import debugger_utility as du
+
 
 # Global variables
 pbar = None
@@ -73,24 +75,27 @@ def fetch(game_id, args=None):
     #****************************************
     #                Images
     # ****************************************
-    for x in data[game_id]['data']['screenshots']:
-        log_download_template(x['path_full'], 'Image')
-        game_resources['images'].append(urllib.request.urlretrieve(x['path_full'], None, show_progress)[0])
-        if (not args == None) and "debugging" in args and "single_file_mode" in args["debugging"] and args["debugging"]["single_file_mode"] == 1: # this is copyed for videos. We might want to make this a function. [Malte]
-            break
+    if not du.is_debugging_option_enabled(args, "no_image"):
+        for x in data[game_id]['data']['screenshots']:
+            log_download_template(x['path_full'], 'Image')
+            game_resources['images'].append(urllib.request.urlretrieve(x['path_full'], None, show_progress)[0])
+            if ((not args == None) and "debugging" in args) and (("single_image" in args["debugging"] and args["debugging"]["single_image"] == 1) or ("image_cap" in args["debugging"] and data[game_id]['data']['screenshots'].index(x) == args["debugging"]["image_cap"]-1)): # this is copyed for videos. We might want to make this a function. [Malte]
+                break
 
     # ****************************************
     #                Videos
     # ****************************************
-    for x in data[game_id]['data']['movies']:
-        log_download_template(x['webm']['max'], 'Video')
-        game_resources['videos'].append(urllib.request.urlretrieve(x['webm']['max'], None, show_progress)[0])
-        if (not params == None) and "debugging" in params and "single_file_mode" in params["debugging"] and params["debugging"]["single_file_mode"] == 1:
-            break
+    if not du.is_debugging_option_enabled(args, "no_video"):
+        for x in data[game_id]['data']['movies']:
+            log_download_template(x['webm']['max'], 'Video')
+            game_resources['videos'].append(urllib.request.urlretrieve(x['webm']['max'], None, show_progress)[0])
+            if ((not args == None) and "debugging" in args) and (("single_video" in args["debugging"] and args["debugging"]["single_video"] == 1) or ("video_cap" in args["debugging"] and data[game_id]['data']['movies'].index(x) == args["debugging"]["video_cap"]-1)):
+                break
 
     # ****************************************
     #                Audio
     # ****************************************
-    #game_resources['audio'] = generateAudio(generate_ssml_from_html(data[game_id]['data']['detailed_description']))
+    if not du.is_debugging_option_enabled(args, "no_audio"):
+        game_resources['audio'] = generateAudio(generate_ssml_from_html(data[game_id]['data']['detailed_description']))
 
     return game_resources

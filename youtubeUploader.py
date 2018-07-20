@@ -14,6 +14,8 @@ from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage
 from oauth2client.tools import argparser, run_flow
 
+import debugger_utility as du
+
 
 # Explicitly tell the underlying HTTP transport library not to retry, since
 # we are handling retry logic ourselves.
@@ -57,15 +59,17 @@ MISSING_CLIENT_SECRETS_MESSAGE = ""
 VALID_PRIVACY_STATUSES = ("public", "private", "unlisted")
 
 
-def clean_up(output, input):
-  input.audio.close()
+def clean_up(output, input, params):
+  if not du.is_debugging_option_enabled(params, "no_audio"):
+    input.audio.close()
   for x in input.clips:
     x.close()
 
   gc.collect()
 
   os.remove(output)
-  os.remove(input.audio.filename)
+  if not du.is_debugging_option_enabled(params, "no_audio"):
+    os.remove(input.audio.filename)
   for x in input.clips:
     os.remove(x.filename)
 
@@ -151,7 +155,7 @@ def resumable_upload(insert_request):
       print("Sleeping %f seconds and then retrying..." % sleep_seconds)
       time.sleep(sleep_seconds)
 
-def upload(video_clip):
+def upload(video_clip, params=None):
   argparser.add_argument("--file", help="Video file to upload", default=video_clip)
   argparser.add_argument("--title", help="Video title", default="Test Title")
   argparser.add_argument("--description", help="Video description",
@@ -175,4 +179,4 @@ def upload(video_clip):
   except (HttpError):
     print ("")
   finally:
-    clean_up(path, video_clip)
+    clean_up(path, video_clip, params)
