@@ -5,6 +5,11 @@ import re
 from bs4 import BeautifulSoup
 from time import sleep
 from tts import generateAudio
+import nltk.data
+import os
+import tempfile
+import time
+import wave
 
 import debugger_utility as du
 
@@ -29,7 +34,21 @@ def generate_ssml_from_html(html):
         x.name = "break"
         x["time"] = "200ms"
 
-    return '<speak><emphasis level="moderate">' + ' '.join(cleanhtml(soup.prettify()).split()) + '</emphasis></speak>'
+    # split in blocks with less than 5.000 characters
+    tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+    tokens = tokenizer.tokenize(' '.join(cleanhtml(soup.prettify()).split()))
+
+    text_list = [['<speak><emphasis level="moderate">', 0]]
+    tmp = 0
+    for token in tokens:
+        text_list[tmp][1] += len(token)
+        if text_list[tmp][1] > 1000:
+            text_list[tmp][0] += '</emphasis></speak>'
+            tmp += 1
+            text_list.append(['<speak><emphasis level="moderate">', 0])
+        text_list[tmp][0] += token
+
+    return text_list
 
 def show_progress(block_num, block_size, total_size):
     global pbar
@@ -67,7 +86,7 @@ def fetch(game_id, args=None):
     game_resources = dict(
         images = [],
         videos = [],
-        audio = None
+        audio = [None, []]
     )
 
     data = requests.get(url=url, params=params).json()
@@ -79,7 +98,7 @@ def fetch(game_id, args=None):
         for x in data[game_id]['data']['screenshots']:
             log_download_template(x['path_full'], 'Image')
             game_resources['images'].append(urllib.request.urlretrieve(x['path_full'], None, show_progress)[0])
-            if ((not args == None) and "debugging" in args) and (("single_image" in args["debugging"] and args["debugging"]["single_image"] == 1) or ("image_cap" in args["debugging"] and data[game_id]['data']['screenshots'].index(x) == args["debugging"]["image_cap"]-1)): # this is copyed for videos. We might want to make this a function. [Malte]
+            if ((not args == None) and "debugging" in args) and ("image_cap" in args["debugging"] and len(game_resources['images']) == args["debugging"]["image_cap"]): # this is copyed for videos. We might want to make this a function. [Malte]
                 break
 
     # ****************************************
@@ -89,13 +108,24 @@ def fetch(game_id, args=None):
         for x in data[game_id]['data']['movies']:
             log_download_template(x['webm']['max'], 'Video')
             game_resources['videos'].append(urllib.request.urlretrieve(x['webm']['max'], None, show_progress)[0])
-            if ((not args == None) and "debugging" in args) and (("single_video" in args["debugging"] and args["debugging"]["single_video"] == 1) or ("video_cap" in args["debugging"] and data[game_id]['data']['movies'].index(x) == args["debugging"]["video_cap"]-1)):
+            if ((not args == None) and "debugging" in args) and  ("video_cap" in args["debugging"] and len(game_resources['videos']) == args["debugging"]["video_cap"]):
                 break
 
     # ****************************************
     #                Audio
     # ****************************************
     if not du.is_debugging_option_enabled(args, "no_audio"):
-        game_resources['audio'] = generateAudio(generate_ssml_from_html(data[game_id]['data']['detailed_description']))
+        game_resources['audio'][0] = os.path.join(tempfile.gettempdir(), time.strftime("%Y%m%d-%H%M%S"))+'.wav'
+        with wave.open(game_resources['audio'][0], 'wb') as out:
+            params_set = 0
+            for x in generate_ssml_from_html(data[game_id]['data']['detailed_description']):
+                game_resources['audio'][1].append(generateAudio(x[0]))
+                with wave.open(game_resources['audio'][1][-1], 'rb') as w:
+                    if params_set == 0:
+                        out.setparams(w.getparams())
+                        params_set = 1
+                    out.writeframes(w.readframes(w.getnframes()))
+                if ((not args == None) and "debugging" in args) and ("audio_cap" in args["debugging"] and len(game_resources['audio'][1]) == args["debugging"]["audio_cap"]):
+                    break
 
     return game_resources

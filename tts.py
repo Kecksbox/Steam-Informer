@@ -26,7 +26,7 @@ def generateAudio(ssml):
 
     # The response's audio_content is binary.
 
-    with open(os.path.join(tempfile.gettempdir(), time.strftime("%Y%m%d-%H%M%S"))+'.mp3', 'wb') as out:
+    with open(os.path.join(tempfile.gettempdir(), time.strftime("%Y%m%d-%H%M%S"))+'.wav', 'wb') as out:
         out.write(response.audio_content)
-        print(os.path.join(tempfile.gettempdir(), time.strftime("%Y%m%d-%H%M%S"))+'.mp3')
+        print(out.name)
         return out.name

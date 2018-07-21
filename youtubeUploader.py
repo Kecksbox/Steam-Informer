@@ -5,7 +5,7 @@ import random
 import sys
 import time
 import tempfile
-import gc
+from debugger_utility import clean_composite_clip
 
 from apiclient.discovery import build
 from apiclient.errors import HttpError
@@ -57,24 +57,6 @@ YOUTUBE_API_VERSION = "v3"
 MISSING_CLIENT_SECRETS_MESSAGE = ""
 
 VALID_PRIVACY_STATUSES = ("public", "private", "unlisted")
-
-
-def clean_up(output, input, params):
-  if not du.is_debugging_option_enabled(params, "no_audio"):
-    input.audio.close()
-  for x in input.clips:
-    x.close()
-
-  gc.collect()
-
-  os.remove(output)
-  if not du.is_debugging_option_enabled(params, "no_audio"):
-    os.remove(input.audio.filename)
-  for x in input.clips:
-    os.remove(x.filename)
-
-  print("successfully cleaned.")
-
 
 def get_authenticated_service(args):
   flow = flow_from_clientsecrets(CLIENT_SECRETS_FILE,
@@ -179,4 +161,5 @@ def upload(video_clip, params=None):
   except (HttpError):
     print ("")
   finally:
-    clean_up(path, video_clip, params)
+    clean_composite_clip(video_clip, params)
+    os.remove(path)

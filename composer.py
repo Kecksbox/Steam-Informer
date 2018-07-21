@@ -1,6 +1,13 @@
-from moviepy.editor import VideoFileClip, ImageClip, CompositeVideoClip, AudioFileClip
+from moviepy.editor import VideoFileClip, ImageClip, CompositeVideoClip, CompositeAudioClip, AudioFileClip
 
 import debugger_utility as du
+
+
+def set_up_audio_clip(audio_rescource):
+    tmp =  AudioFileClip(audio_rescource[0])
+    tmp.clips = audio_rescource[1]
+    return tmp
+
 
 def compose(resources, params):
 
@@ -14,7 +21,7 @@ def compose(resources, params):
         resources['images'][x] = ImageClip(resources['images'][x], duration=5).set_start(currentDuration)
         resources['images'][x].filename = tmp
         currentDuration += resources['images'][x].duration
-    if not du.is_debugging_option_enabled(params, "no_audio"):
-        resources['audio'] = AudioFileClip(resources['audio'])
-        return CompositeVideoClip(resources['videos'] + resources['images']).set_audio(resources['audio'])
-    return CompositeVideoClip(resources['videos'] + resources['images'])
+
+    if du.is_debugging_option_enabled(params, "no_audio"):
+        return CompositeVideoClip(resources['videos'] + resources['images'])
+    return CompositeVideoClip(resources['videos'] + resources['images']).set_audio(set_up_audio_clip(resources['audio']))
