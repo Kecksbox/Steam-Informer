@@ -6,16 +6,16 @@ import debugger_utility as du
 
 params = dict(
     debugging = dict(
-        no_video = 0,
-        no_image = 0,
+        no_video = 1,
+        no_image = 1,
         image_cap = 1,
         video_cap = 1,
-        audio_cap = 2,
+        audio_cap = 3,
         no_audio = 0,
-        no_composing = 0,
+        no_composing = 1,
         no_upload = 1,
-        keep_audio = 0,
-        keep_composed_video = 1
+        keep_audio = 1,
+        keep_composed_video = 0
     )
 )
 

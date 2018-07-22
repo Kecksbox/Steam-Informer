@@ -28,5 +28,4 @@ def generateAudio(ssml):
 
     with open(os.path.join(tempfile.gettempdir(), time.strftime("%Y%m%d-%H%M%S"))+'.wav', 'wb') as out:
         out.write(response.audio_content)
-        print(out.name)
         return out.name

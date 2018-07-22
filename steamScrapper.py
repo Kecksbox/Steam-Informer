@@ -32,6 +32,11 @@ def generate_ssml_from_html(html):
         x.name = "break"
         x["time"] = "200ms"
 
+    for x in soup.find_all("li"):
+        new_html = '<p><break time="200ms"/>' + x.text + ".</p>"
+        new_soup = BeautifulSoup(new_html)
+        x.replace_with(new_soup.p)
+
     tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
     tokens = tokenizer.tokenize(' '.join(cleanhtml(soup.prettify()).split()))
 
