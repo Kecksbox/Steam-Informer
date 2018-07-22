@@ -10,11 +10,11 @@ params = dict(
         no_image = 0,
         image_cap = 1,
         video_cap = 1,
-        audio_cap = 2,
+        audio_cap = 1,
         no_audio = 0,
-        no_composing = 1,
+        no_composing = 0,
         no_upload = 1,
-        keep_audio = 0,
+        keep_audio = 1,
     )
 )
 

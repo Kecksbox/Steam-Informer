@@ -1,33 +1,41 @@
 import gc
 import os
 from moviepy.editor import CompositeVideoClip, CompositeAudioClip, AudioFileClip
-import tempfile
-import time
-
-
-#def keep_audio(composed_audio):
-#    audio_path = os.path.join(tempfile.gettempdir(), time.strftime("%Y%m%d-%H%M%S"))+'.mp3'
-#    #composed_audio.write_audiofile(audio_path)
-#    print('[debugger_utility] >>> Cleaner: Audio file at {path} was spared.'.format(path=audio_path))
 
 
 def is_debugging_option_enabled(params, option_name):
     return not params == None and "debugging" in params and option_name in params["debugging"] and params["debugging"][option_name] == 1
 
-def clean_dict(input, params): # revisit
+def cleaner_status(path, is_deleted):
+    print('{status} {path}'.format(status=('+' if (is_deleted == 0) else '-'), path=path))
+
+def clean_dict(input, params):
+    print("""
+-------------------------------------------------------------------------------
+[debugger_utility] >>> Cleaner started          (+: kept -: removed)
+-------------------------------------------------------------------------------""")
     if not is_debugging_option_enabled(params, "no_audio"):
-        if is_debugging_option_enabled(params, "keep_audio"):
-            for x in input["audio"][1]:
-                os.remove(x)
-            print('[debugger_utility] >>> Cleaner: Audio file at {path} was spared.'.format(path=input["audio"][0]))
+        for x in input["audio"][1]:
+            os.remove(x)
+            cleaner_status(x, 1)
+        if not is_debugging_option_enabled(params, "keep_audio"):
+            os.remove(input["audio"][0])
+            cleaner_status(input["audio"][0], 1)
         else:
-            for x in input["audio"][1]+[input["audio"][0]]:
-                os.remove(x)
+            cleaner_status(input["audio"][0], 0)
     for x in input["images"] + input["videos"]:
             os.remove(x)
-    print("successfully cleaned.")
+            cleaner_status(x, 1)
+    print("""
+-------------------------------------------------------------------------------
+[debugger_utility] >>> Successfully cleaned
+-------------------------------------------------------------------------------""")
 
 def clean_composite_clip(input, params):
+    print("""
+-------------------------------------------------------------------------------
+[debugger_utility] >>> Cleaner started          (+: kept -: removed)
+-------------------------------------------------------------------------------""")
     audio = input.audio
     input.close()
     if not is_debugging_option_enabled(params, "no_audio"):
@@ -40,14 +48,19 @@ def clean_composite_clip(input, params):
     if not is_debugging_option_enabled(params, "no_audio"):
         if not is_debugging_option_enabled(params, "keep_audio"):
             os.remove(audio.filename)
+            cleaner_status(audio.filename, 1)
         else:
-            print('[debugger_utility] >>> Cleaner: Audio file at {path} was spared.'.format(path=audio.filename))
+            cleaner_status(audio.filename, 0)
         for x in audio.clips:
             os.remove(x)
+            cleaner_status(x, 1)
     for x in input.clips:
         os.remove(x.filename)
-
-    print("successfully cleaned.")
+        cleaner_status(x.filename, 1)
+    print("""
+-------------------------------------------------------------------------------
+[debugger_utility] >>> Successfully cleaned
+-------------------------------------------------------------------------------""")
 
 def run_cleaner(params, input):
     if is_debugging_option_enabled(params, "no_composing") and type(input) is dict:

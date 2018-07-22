@@ -19,9 +19,7 @@ pbar = None
 downloaded = 0
 
 def cleanhtml(raw_html):
-  cleanr = re.compile("<+(?!.*emphasis)(?!.*break).*")
-  cleantext = re.sub(cleanr, '', raw_html)
-  return cleantext
+    return re.sub(re.compile("<+(?!.*emphasis)(?!.*break).*"), '', raw_html)
 
 def generate_ssml_from_html(html):
     soup = BeautifulSoup(html)
@@ -34,19 +32,16 @@ def generate_ssml_from_html(html):
         x.name = "break"
         x["time"] = "200ms"
 
-    # split in blocks with less than 5.000 characters
     tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
     tokens = tokenizer.tokenize(' '.join(cleanhtml(soup.prettify()).split()))
 
     text_list = [['<speak><emphasis level="moderate">', 0]]
-    tmp = 0
     for token in tokens:
-        text_list[tmp][1] += len(token)
-        if text_list[tmp][1] > 1000:
-            text_list[tmp][0] += '</emphasis></speak>'
-            tmp += 1
+        text_list[-1][1] += len(token)
+        if text_list[-1][1] > 1000:
+            text_list[-1][0] += '</emphasis></speak>'
             text_list.append(['<speak><emphasis level="moderate">', 0])
-        text_list[tmp][0] += token
+        text_list[-1][0] += token
 
     return text_list
 
