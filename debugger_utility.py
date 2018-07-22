@@ -1,5 +1,7 @@
 import gc
 import os
+import tempfile
+import time
 from moviepy.editor import CompositeVideoClip, CompositeAudioClip, AudioFileClip
 
 
@@ -32,10 +34,16 @@ def clean_dict(input, params):
 -------------------------------------------------------------------------------""")
 
 def clean_composite_clip(input, params):
+    tmp = is_debugging_option_enabled(params, "keep_composed_video") and ("composed_video_allready_created" not in params or params["composed_video_allready_created"] == 0)
+    if tmp == 1:
+        tmp = os.path.join(tempfile.gettempdir(), time.strftime("%Y%m%d-%H%M%S")) + '.mp4'
+        input.write_videofile(tmp, fps=30)
     print("""
 -------------------------------------------------------------------------------
 [debugger_utility] >>> Cleaner started          (+: kept -: removed)
 -------------------------------------------------------------------------------""")
+    if not tmp == 0:
+        cleaner_status(tmp, 0)
     audio = input.audio
     input.close()
     if not is_debugging_option_enabled(params, "no_audio"):

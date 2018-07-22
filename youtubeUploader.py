@@ -154,6 +154,7 @@ def upload(video_clip, params=None):
   path = os.path.join(tempfile.gettempdir(), time.strftime("%Y%m%d-%H%M%S"))+'.mp4'
   args.file.write_videofile(path, fps=30)
   args.file = path
+  params["composed_video_allready_created"] = 1
 
   youtube = get_authenticated_service(args)
   try:
