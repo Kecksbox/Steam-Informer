@@ -70,7 +70,7 @@ def clean_composite_clip(input, params):
 
     if is_debugging_option_enabled(params, "keep_composed_video"):
         cleaner_status(tmp, 0)
-    else:
+    elif not tmp == 0:
         os.remove(tmp)
         cleaner_status(tmp, 1)
     print("""
