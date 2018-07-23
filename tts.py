@@ -4,7 +4,7 @@ import time
 import os
 
 def generateAudio(ssml):
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'C:\Users\Malte\PycharmProjects\OPTC\service_account2.json'
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'./service_account.json'
 
     client = texttospeech.TextToSpeechClient()
 
