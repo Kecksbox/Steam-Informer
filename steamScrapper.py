@@ -91,7 +91,7 @@ def fetch(game_id, args=None):
 
     data = requests.get(url=url, params=params).json()
 
-    #****************************************
+    #*****************************************
     #                Images
     # ****************************************
     if not du.is_debugging_option_enabled(args, "no_image"):

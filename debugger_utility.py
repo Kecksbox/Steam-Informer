@@ -2,7 +2,7 @@ import gc
 import os
 import tempfile
 import time
-from moviepy.editor import CompositeVideoClip, CompositeAudioClip, AudioFileClip
+from moviepy.editor import CompositeVideoClip
 
 
 def is_debugging_option_enabled(params, option_name):
@@ -34,16 +34,18 @@ def clean_dict(input, params):
 -------------------------------------------------------------------------------""")
 
 def clean_composite_clip(input, params):
-    tmp = is_debugging_option_enabled(params, "keep_composed_video") and ("composed_video_allready_created" not in params or params["composed_video_allready_created"] == 0)
-    if tmp == 1:
+
+    tmp = 0
+    if is_debugging_option_enabled(params, "keep_composed_video") and ("composed_video_allready_created" not in params or params["composed_video_allready_created"] == 0):
         tmp = os.path.join(tempfile.gettempdir(), time.strftime("%Y%m%d-%H%M%S")) + '.mp4'
         input.write_videofile(tmp, fps=30)
+    elif not is_debugging_option_enabled(params, "no_upload"):
+        tmp = input.filename
+
     print("""
 -------------------------------------------------------------------------------
 [debugger_utility] >>> Cleaner started          (+: kept -: removed)
 -------------------------------------------------------------------------------""")
-    if not tmp == 0:
-        cleaner_status(tmp, 0)
     audio = input.audio
     input.close()
     if not is_debugging_option_enabled(params, "no_audio"):
@@ -65,6 +67,12 @@ def clean_composite_clip(input, params):
     for x in input.clips:
         os.remove(x.filename)
         cleaner_status(x.filename, 1)
+
+    if is_debugging_option_enabled(params, "keep_composed_video"):
+        cleaner_status(tmp, 0)
+    else:
+        os.remove(tmp)
+        cleaner_status(tmp, 1)
     print("""
 -------------------------------------------------------------------------------
 [debugger_utility] >>> Successfully cleaned
