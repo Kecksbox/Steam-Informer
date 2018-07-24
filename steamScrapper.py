@@ -10,6 +10,7 @@ import os
 import tempfile
 import time
 import wave
+import json
 
 import debugger_utility as du
 
@@ -17,6 +18,14 @@ import debugger_utility as du
 # Global variables
 pbar = None
 downloaded = 0
+params = dict(
+        origin='Chicago,IL',
+        destination='Los+Angeles,CA',
+        waypoints='Joplin,MO|Oklahoma+City,OK',
+        sensor='false'
+    )
+
+app_detail_url = 'http://store.steampowered.com/api/appdetails?appids='
 
 def cleanhtml(raw_html):
     return re.sub(re.compile("<+(?!.*emphasis)(?!.*break).*"), '', raw_html)
@@ -73,21 +82,16 @@ def fetch(game_id, args=None):
     if isinstance(game_id, int):
         game_id = str(game_id)
 
-    url = 'http://store.steampowered.com/api/appdetails?appids=' + game_id
-
-
-    params = dict(
-        origin='Chicago,IL',
-        destination='Los+Angeles,CA',
-        waypoints='Joplin,MO|Oklahoma+City,OK',
-        sensor='false'
-    )
+    global app_detail_url
+    url = app_detail_url + game_id
 
     game_resources = dict(
         images = [],
         videos = [],
         audio = [None, []]
     )
+
+    global params
 
     data = requests.get(url=url, params=params).json()
 
@@ -129,3 +133,36 @@ def fetch(game_id, args=None):
                     break
 
     return game_resources
+
+def init_app_map():
+    if os.path.isfile('data.json'):
+        with open('data.json', 'r') as f:
+            data = json.load(f)
+            if type(data) == dict:
+                return data
+    return dict()
+
+def next_game():
+
+    global params
+    global app_detail_url
+
+    apps = requests.get(url='http://api.steampowered.com/ISteamApps/GetAppList/v0002/?key=STEAMKEY&format=json', params=params).json()["applist"]["apps"]
+
+    map = init_app_map()
+
+    for app in apps:
+        app_id = str(app['appid'])
+        if app_id in map:
+            continue
+        app = requests.get(url=app_detail_url+app_id, params=params).json()[app_id]
+        if app['success'] == False:
+            map[app_id] = 0
+            continue
+        map[app_id] = 1 # implies that this is a game.
+        with open('data.json', 'w') as f:
+            json.dump(map, f)
+        return app_id
+
+
+

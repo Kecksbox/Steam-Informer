@@ -1,7 +1,6 @@
 import steamScrapper
 import composer
 import youtubeUploader
-import gameChooser
 
 import debugger_utility as du
 
@@ -20,16 +19,17 @@ params = dict(
     )
 )
 
-while gameChooser.get_game() != -1:
-    pass
+game_id = steamScrapper.next_game()
 
-game_resources = steamScrapper.fetch(262280, params)
+print(game_id)
 
-du.run_cleaner(params, game_resources)
-if not du.is_debugging_option_enabled(params, "no_composing"):
-    composed_video = composer.compose(game_resources, params)
+#game_resources = steamScrapper.fetch(game_id, params) # Dungons2 is 262280
 
-    du.run_cleaner(params, composed_video)
-    if not du.is_debugging_option_enabled(params, "no_upload"):
-        youtubeUploader.upload(composed_video, params)
+#du.run_cleaner(params, game_resources)
+#if not du.is_debugging_option_enabled(params, "no_composing"):
+#    composed_video = composer.compose(game_resources, params)
+#
+#    du.run_cleaner(params, composed_video)
+#    if not du.is_debugging_option_enabled(params, "no_upload"):
+#        youtubeUploader.upload(composed_video, params)
 
