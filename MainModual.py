@@ -1,6 +1,7 @@
 import steamScrapper
 import composer
 import youtubeUploader
+import gameChooser
 
 import debugger_utility as du
 
@@ -18,6 +19,9 @@ params = dict(
         keep_composed_video = 0
     )
 )
+
+while gameChooser.get_game() != -1:
+    pass
 
 game_resources = steamScrapper.fetch(262280, params)
 
