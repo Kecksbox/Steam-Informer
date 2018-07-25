@@ -4,14 +4,21 @@ import time
 log_file = time.strftime("%Y.%m.%d") + '.log'
 
 
-def log(text, module_name='unknown'):
+def log(text, module_name='unknown', text_in_new_line=False):
     """This function logs a text to a logfile and to the console itself.
        It gets a module_name like 'logger' which gets processed to '[logger]' and a text"""
 
     global log_file
 
+    # Create the first part of the message (time and module name)
+    log_text = '(' + time.strftime("%Y.%m.%d-%H.%M.%S") + ')' + '[' + module_name + ']: '
+
+    # Create the new line if parameter is set
+    if text_in_new_line:
+        log_text = log_text + '\n'
+
     # Set the text which will be logged
-    log_text = '(' + time.strftime("%Y.%m.%d-%H.%M.%S") + ')' + '[' + module_name + ']: ' + text
+    log_text = log_text + text
 
     # Write the log_text to the logfile
     with open(log_file, 'a') as file:
@@ -32,7 +39,8 @@ def log_download(source, data_type="unknown", module_name='unknown'):
     # Create the text that should be logged
     log_text = """-------------------------------------------------------------------------------
 ({time_date})[{module_name}] >>> Downloading ({data_type}) : {source}
--------------------------------------------------------------------------------""".format(source=source, data_type=data_type, time_date=time_date, module_name=module_name)
+-------------------------------------------------------------------------------"""\
+        .format(source=source, data_type=data_type, time_date=time_date, module_name=module_name)
 
     # Write the log_text to the logfile
     with open(log_file, 'a') as file:

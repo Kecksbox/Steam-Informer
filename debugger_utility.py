@@ -5,7 +5,7 @@ import time
 import logger
 from moviepy.editor import CompositeVideoClip
 
-module_name = 'steamScrapper'  # Specifies the name of the module
+module_name = 'debugger_utility'  # Specifies the name of the module
 
 
 def is_debugging_option_enabled(params, option_name):
@@ -21,7 +21,7 @@ def clean_dict(input, params):
     global module_name
     logger.log("""-------------------------------------------------------------------------------
 [debugger_utility] >>> Cleaner started          (+: kept -: removed)
--------------------------------------------------------------------------------""", module_name)
+-------------------------------------------------------------------------------""", module_name, True)
     if not is_debugging_option_enabled(params, "no_audio"):
         for x in input["audio"][1]:
             os.remove(x)
@@ -36,7 +36,7 @@ def clean_dict(input, params):
             cleaner_status(x, 1)
     logger.log("""-------------------------------------------------------------------------------
 [debugger_utility] >>> Successfully cleaned
--------------------------------------------------------------------------------""", module_name)
+-------------------------------------------------------------------------------""", module_name, True)
 
 
 def clean_composite_clip(input, params):
@@ -50,7 +50,7 @@ def clean_composite_clip(input, params):
 
     logger.log("""-------------------------------------------------------------------------------
 [debugger_utility] >>> Cleaner started          (+: kept -: removed)
--------------------------------------------------------------------------------""", module_name)
+-------------------------------------------------------------------------------""", module_name, True)
     audio = input.audio
     input.close()
     if not is_debugging_option_enabled(params, "no_audio"):
@@ -80,7 +80,7 @@ def clean_composite_clip(input, params):
         cleaner_status(tmp, 1)
     logger.log("""-------------------------------------------------------------------------------
 [debugger_utility] >>> Successfully cleaned
--------------------------------------------------------------------------------""", module_name)
+-------------------------------------------------------------------------------""", module_name, True)
 
 
 def run_cleaner(params, input):
