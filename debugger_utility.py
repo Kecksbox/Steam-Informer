@@ -2,20 +2,26 @@ import gc
 import os
 import tempfile
 import time
+import logger
 from moviepy.editor import CompositeVideoClip
+
+module_name = 'steamScrapper'  # Specifies the name of the module
 
 
 def is_debugging_option_enabled(params, option_name):
     return not params == None and "debugging" in params and option_name in params["debugging"] and params["debugging"][option_name] == 1
 
+
 def cleaner_status(path, is_deleted):
-    print('{status} {path}'.format(status=('+' if (is_deleted == 0) else '-'), path=path))
+    global module_name
+    logger.log('{status} {path}'.format(status=('+' if (is_deleted == 0) else '-'), path=path), module_name)
+
 
 def clean_dict(input, params):
-    print("""
--------------------------------------------------------------------------------
+    global module_name
+    logger.log("""-------------------------------------------------------------------------------
 [debugger_utility] >>> Cleaner started          (+: kept -: removed)
--------------------------------------------------------------------------------""")
+-------------------------------------------------------------------------------""", module_name)
     if not is_debugging_option_enabled(params, "no_audio"):
         for x in input["audio"][1]:
             os.remove(x)
@@ -28,10 +34,10 @@ def clean_dict(input, params):
     for x in input["images"] + input["videos"]:
             os.remove(x)
             cleaner_status(x, 1)
-    print("""
--------------------------------------------------------------------------------
+    logger.log("""-------------------------------------------------------------------------------
 [debugger_utility] >>> Successfully cleaned
--------------------------------------------------------------------------------""")
+-------------------------------------------------------------------------------""", module_name)
+
 
 def clean_composite_clip(input, params):
 
@@ -42,10 +48,9 @@ def clean_composite_clip(input, params):
     elif not is_debugging_option_enabled(params, "no_upload"):
         tmp = input.filename
 
-    print("""
--------------------------------------------------------------------------------
+    logger.log("""-------------------------------------------------------------------------------
 [debugger_utility] >>> Cleaner started          (+: kept -: removed)
--------------------------------------------------------------------------------""")
+-------------------------------------------------------------------------------""", module_name)
     audio = input.audio
     input.close()
     if not is_debugging_option_enabled(params, "no_audio"):
@@ -73,10 +78,10 @@ def clean_composite_clip(input, params):
     elif not tmp == 0:
         os.remove(tmp)
         cleaner_status(tmp, 1)
-    print("""
--------------------------------------------------------------------------------
+    logger.log("""-------------------------------------------------------------------------------
 [debugger_utility] >>> Successfully cleaned
--------------------------------------------------------------------------------""")
+-------------------------------------------------------------------------------""", module_name)
+
 
 def run_cleaner(params, input):
     if is_debugging_option_enabled(params, "no_composing") and type(input) is dict:

@@ -5,6 +5,7 @@ import random
 import sys
 import time
 import tempfile
+import logger
 from debugger_utility import clean_composite_clip
 
 from apiclient.discovery import build
@@ -16,6 +17,7 @@ from oauth2client.tools import argparser, run_flow
 
 import debugger_utility as du
 
+module_name = 'youtubeUploader'  # Specifies the name of the module
 
 # Explicitly tell the underlying HTTP transport library not to retry, since
 # we are handling retry logic ourselves.
@@ -117,24 +119,24 @@ def resumable_upload(insert_request):
   retry = 0
   while response is None:
     try:
-      print("Uploading file...")
+      logger.log("Uploading file...", module_name)
       status, response = insert_request.next_chunk()
       if 'id' in response:
-        print("Video id '%s' was successfully uploaded." % response['id'])
+        logger.log("Video id '%s' was successfully uploaded." % response['id'], module_name)
       else:
         exit("The upload failed with an unexpected response: %s" % response)
     except (HttpError):
-        print("")
+      logger.log("", module_name)
 
     if error is not None:
-      print(error)
+      logger.log(error, module_name)
       retry += 1
       if retry > MAX_RETRIES:
         exit("No longer attempting to retry.")
 
       max_sleep = 2 ** retry
       sleep_seconds = random.random() * max_sleep
-      print("Sleeping %f seconds and then retrying..." % sleep_seconds)
+      logger.log("Sleeping %f seconds and then retrying..." % sleep_seconds, module_name)
       time.sleep(sleep_seconds)
 
 def upload(video_clip, params=None):
@@ -161,6 +163,6 @@ def upload(video_clip, params=None):
   try:
     initialize_upload(youtube, args)
   except (HttpError):
-    print ("")
+    logger.log("", module_name)
   finally:
     clean_composite_clip(video_clip, params)
