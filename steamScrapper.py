@@ -155,8 +155,7 @@ def next_game():
         app_id = str(app['appid'])
         if app_id in map:
             continue
-        app = requests.get(url=app_detail_url+app_id, params=params).json()[app_id]
-        if app['success'] == False:
+        if requests.get(url=app_detail_url+app_id, params=params).json()[app_id]['success'] == False:
             map[app_id] = 0
             continue
         map[app_id] = 1 # implies that this is a game.
