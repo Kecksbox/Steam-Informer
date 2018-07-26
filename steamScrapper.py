@@ -4,7 +4,7 @@ import progressbar
 import re
 from bs4 import BeautifulSoup
 from time import sleep
-from tts import generateAudio
+from tts import generate_audio_from_text
 import nltk.data
 import os
 import tempfile
@@ -179,7 +179,7 @@ def get_audio(game_data):
         for text in generate_ssml_from_html(game_data['data']['detailed_description']):
 
             # Create the audio for each text
-            audio_clips.append(generateAudio(text[0]))
+            audio_clips.append(generate_audio_from_text(text[0]))
 
             # Write the partial audio clips
             with wave.open(audio_clips[-1], 'rb') as partial_audio:
@@ -223,7 +223,7 @@ def fetch(game_id, params=None):
     # Set the limit parameters
     image_limit = -1
     video_limit = -1
-    no_audio = False
+    generate_audio = True
 
     # Set the image limits if set in the params
     if 'image_limit' in params:
@@ -234,8 +234,8 @@ def fetch(game_id, params=None):
         video_limit = params['video_limit']
 
     # Set if audio should be processed
-    if 'no_audio' in params:
-        no_audio = params['no_audio']
+    if 'generate_audio' in params:
+        generate_audio = params['generate_audio']
 
     # Download the images
     game_resources['images'] = get_images(data[game_id], image_limit)
@@ -244,7 +244,7 @@ def fetch(game_id, params=None):
     game_resources['videos'] = get_videos(data[game_id], video_limit)
 
     # Generate the audio
-    if not no_audio:
+    if generate_audio:
         game_resources['audio'] = get_audio(data[game_id])
 
     # Return the fetched data

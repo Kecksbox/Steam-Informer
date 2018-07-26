@@ -60,6 +60,7 @@ MISSING_CLIENT_SECRETS_MESSAGE = ""
 
 VALID_PRIVACY_STATUSES = ("public", "private", "unlisted")
 
+
 def get_authenticated_service(args):
   flow = flow_from_clientsecrets(CLIENT_SECRETS_FILE,
     scope=YOUTUBE_UPLOAD_SCOPE,
@@ -73,6 +74,7 @@ def get_authenticated_service(args):
 
   return build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
     http=credentials.authorize(httplib2.Http()))
+
 
 def initialize_upload(youtube, options):
   tags = None
@@ -111,22 +113,23 @@ def initialize_upload(youtube, options):
 
   resumable_upload(insert_request)
 
-# This method implements an exponential backoff strategy to resume a
-# failed upload.
+
 def resumable_upload(insert_request):
-  response = None
-  error = None
-  retry = 0
-  while response is None:
-    try:
-      logger.log("Uploading file...", module_name)
-      status, response = insert_request.next_chunk()
-      if 'id' in response:
-        logger.log("Video id '%s' was successfully uploaded." % response['id'], module_name)
-      else:
-        exit("The upload failed with an unexpected response: %s" % response)
-    except (HttpError):
-      logger.log("", module_name)
+    """This method implements an exponential backoff strategy to resume a failed upload."""
+
+    response = None
+    error = None
+    retry = 0
+    while response is None:
+        try:
+            logger.log("Uploading file...", module_name)
+            status, response = insert_request.next_chunk()
+            if 'id' in response:
+                logger.log("Video id '%s' was successfully uploaded." % response['id'], module_name)
+            else:
+                exit("The upload failed with an unexpected response: %s" % response)
+        except (HttpError):
+            logger.log("", module_name)
 
     if error is not None:
       logger.log(error, module_name)
@@ -139,30 +142,31 @@ def resumable_upload(insert_request):
       logger.log("Sleeping %f seconds and then retrying..." % sleep_seconds, module_name)
       time.sleep(sleep_seconds)
 
+
 def upload(video_clip, params=None):
-  argparser.add_argument("--file", help="Video file to upload", default=video_clip)
-  argparser.add_argument("--title", help="Video title", default="Test Title")
-  argparser.add_argument("--description", help="Video description",
+    argparser.add_argument("--file", help="Video file to upload", default=video_clip)
+    argparser.add_argument("--title", help="Video title", default="Test Title")
+    argparser.add_argument("--description", help="Video description",
     default="Test Description")
-  argparser.add_argument("--category", default="22",
+    argparser.add_argument("--category", default="22",
     help="Numeric video category. " +
       "See https://developers.google.com/youtube/v3/docs/videoCategories/list")
-  argparser.add_argument("--keywords", help="Video keywords, comma separated",
+    argparser.add_argument("--keywords", help="Video keywords, comma separated",
     default="")
-  argparser.add_argument("--privacyStatus", choices=VALID_PRIVACY_STATUSES,
+    argparser.add_argument("--privacyStatus", choices=VALID_PRIVACY_STATUSES,
     default=VALID_PRIVACY_STATUSES[0], help="Video privacy status.")
-  args = argparser.parse_args()
+    args = argparser.parse_args()
 
-  path = os.path.join(tempfile.gettempdir(), time.strftime("%Y%m%d-%H%M%S"))+'.mp4'
-  args.file.write_videofile(path, fps=30)
-  args.file = path
-  video_clip.filename = path
-  params["composed_video_allready_created"] = 1
+    path = os.path.join(tempfile.gettempdir(), time.strftime("%Y%m%d-%H%M%S"))+'.mp4'
+    args.file.write_videofile(path, fps=30)
+    args.file = path
+    video_clip.filename = path
+    params["composed_video_allready_created"] = 1
 
-  youtube = get_authenticated_service(args)
-  try:
-    initialize_upload(youtube, args)
-  except (HttpError):
-    logger.log("", module_name)
-  finally:
-    clean_composite_clip(video_clip, params)
+    youtube = get_authenticated_service(args)
+    try:
+        initialize_upload(youtube, args)
+    except HttpError:
+        logger.log("", module_name)
+    finally:
+        clean_composite_clip(video_clip, params)

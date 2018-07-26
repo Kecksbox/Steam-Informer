@@ -3,9 +3,23 @@ import logger
 import composer
 import youtubeUploader
 import debugger_utility as du
+from moviepy.editor import VideoFileClip
 
-steam_params = dict(
+steam_params = dict(  # MBE
     debugging=dict(
+        # Params for steamScrapper
+        image_limit=-1,  # Limits the amount of images downloaded (-1 no restriction)
+        video_limit=-1,  # Limits the amount of videos downloaded (-1 no restriction)
+        generate_audio=True,  # Activates(True) or deactivates(False) the generation of audio
+
+        # Params for composer
+        compose_video=True,  # Activates(True) or deactivates(False) the composing of the final video
+
+        # Params for uploader
+        upload_trailer=False,  # Activates(True) or deactivates(False) the upload of the trailers
+        upload_composed_video=True,  # Activates(True) or deactivates(False) the upload of the final video
+
+        # Old params MBE
         no_video=1,
         no_image=0,
         image_cap=10,
@@ -13,10 +27,25 @@ steam_params = dict(
         audio_cap=10,
         no_audio=0,
         no_composing=0,
-        no_upload=1,
+        no_upload=0,
         keep_audio=0,
         keep_composed_video=1
     )
+)
+
+# A dict to toggle parts of the system on and off or restrict them
+debugging = dict(
+        # Params for steamScrapper
+        image_limit=-1,  # Limits the amount of images downloaded (-1 no restriction)
+        video_limit=-1,  # Limits the amount of videos downloaded (-1 no restriction)
+        generate_audio=True,  # Activates(True) or deactivates(False) the generation of audio
+
+        # Params for composer
+        compose_video=True,  # Activates(True) or deactivates(False) the composing of the final video
+
+        # Params for uploader
+        upload_trailer=True,  # Activates(True) or deactivates(False) the upload of the trailers
+        upload_composed_video=True,  # Activates(True) or deactivates(False) the upload of the final video
 )
 
 module_name = 'mainModule'
@@ -25,7 +54,7 @@ module_name = 'mainModule'
 game_id = steamScrapper.next_game()
 
 # Log the that we start to work on a new game
-logger.log('Start with the processing of the next game(' + game_id + ')', module_name)
+logger.log('\n\nStart with the processing of the next game(' + game_id + ')', module_name)
 
 # Get the resources of the game
 game_resources = steamScrapper.fetch(262280, steam_params)  # Dungons2 is 262280
@@ -33,16 +62,36 @@ game_resources = steamScrapper.fetch(262280, steam_params)  # Dungons2 is 262280
 print(game_resources)
 
 # Clean all data which isn´t needed anymore
-du.run_cleaner(steam_params, game_resources)
+du.run_cleaner(steam_params, game_resources)  # MBE
 
-# If activated, compose a video out of the game resources
-if not du.is_debugging_option_enabled(steam_params, "no_composing"):
+"""MBE WIR SOLLTEN UNS ÜBERLEGEN WIE WIR DAS BEARBEITEN WENN WIR EINEN TEIL DER TRAILER HOCHGELADEN HABEN
+   UND DAS PROGRAM ABSTÜRTZT, SOMIT DAS GAME NICHT ALS BEENDET MARKIERT WIRD.
+   EINE LÖSUNG WÄRE DAS WIR VOR EINEM UPLOAD IMMER EINMAL CHECKEN,
+    OB DER NAME DES VIDEOS BEREITS AUF DEM CHANNEL EXISTIERT 
+    
+    Zudem ist es wichtig, das wir dafür sorgen, das auch exceptions im Log erscheinen.
+    Gegebenenfalls über ein try catch im main modul
+    
+    Gegebenenfalls sollten wir drüber nachdenken die Limiter in eigene Funktion kabseln
+    
+    Wir müssen schauen, dass wir auch die englischen Videos herruntergeladen bekommen"""
+
+# +++++ Handle the trailers +++++
+if debugging['upload_trailer']:
+    # Upload each trailer
+    for video in game_resources['videos']:
+        youtubeUploader.upload(VideoFileClip(video), steam_params)
+
+
+# +++++ Handle the composed video +++++
+if game_resources['compose_video']:
+    # Compose the final video
     composed_video = composer.compose(game_resources, steam_params)
 
     # Clean all data which isn´t needed anymore
     du.run_cleaner(steam_params, composed_video)
 
     # If activated, upload the composed video to the youtube channel
-    if not du.is_debugging_option_enabled(steam_params, "no_upload"):
+    if game_resources['upload_composed_video']:
         youtubeUploader.upload(composed_video, steam_params)
         steamScrapper.set_game_as_processed(game_id)
