@@ -1,4 +1,5 @@
 import steamScrapper
+import logger
 import composer
 import youtubeUploader
 import debugger_utility as du
@@ -18,11 +19,18 @@ steam_params = dict(
     )
 )
 
+module_name = 'mainModule'
+
 # Get the game_id of the game which needs to be processed next
 game_id = steamScrapper.next_game()
 
+# Log the that we start to work on a new game
+logger.log('Start with the processing of the next game(' + game_id + ')', module_name)
+
 # Get the resources of the game
-game_resources = steamScrapper.fetch(game_id, steam_params) # Dungons2 is 262280
+game_resources = steamScrapper.fetch(262280, steam_params)  # Dungons2 is 262280
+
+print(game_resources)
 
 # Clean all data which isn´t needed anymore
 du.run_cleaner(steam_params, game_resources)

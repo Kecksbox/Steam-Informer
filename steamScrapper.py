@@ -78,61 +78,176 @@ def show_progress(block_num, block_size, total_size):
         sleep(1)
 
 
-def fetch(game_id, args=None):
+def get_images(game_data, image_limit=-1):
+    """This function downloads and saves images of a specified game the amount of images downloaded can be limited"""
 
+    # Check if there are images for the game
+    if 'screenshots' not in game_data['data']:
+        logger.log('There are no images for this game', module_name)
+        return None
+
+    # Get the amount of images
+    image_count = len(game_data['data']['screenshots'])
+
+    # Get urls of the images
+    game_image_urls = game_data['data']['screenshots']
+
+    # Get a dict ready to save the images
+    game_images = []
+
+    # Limit the images which will be processed if set
+    if (image_limit > -1) and (image_limit < image_count):
+        image_count = image_limit
+
+    # Download the target amount of images
+    for image_index in range(image_count):
+
+        # Load a single image
+        image = game_image_urls[image_index]
+
+        # Log the download information
+        logger.log_download(image['path_full'], 'Image', module_name)
+
+        # Download the image and save it
+        game_images.append(urllib.request.urlretrieve(image['path_full'], None, show_progress)[0])
+
+    # Return the images (paths to the images, located in tmp)
+    return game_images
+
+
+def get_videos(game_data, video_limit=-1):
+    """This function downloads and saves videos of a specified game the amount of videos downloaded can be limited"""
+
+    # Check if there are videos for the game
+    if 'movies' not in game_data['data']:
+        logger.log('There are no videos for this game', module_name)
+        return None
+
+    # Get the amount of videos
+    video_count = len(game_data['data']['movies'])
+
+    # Get the urls of the videos
+    game_video_jsons = game_data['data']['movies']
+
+    # Get a dict ready to save the videos
+    game_videos = []
+
+    # Limit the videos which will be processed if set
+    if (video_limit > -1) and (video_limit < video_count):
+        video_count = video_limit
+
+    # Download the target amount of videos
+    for video_index in range(video_count):
+
+        # Load a single video
+        video = game_video_jsons[video_index]
+
+        # Log the download information
+        logger.log_download(video['webm']['max'], 'Video', module_name)
+
+        # Download the video and save it
+        game_videos.append(urllib.request.urlretrieve(video['webm']['max'], None, show_progress)[0])
+
+    # Return the videos (paths to the videos, located in tmp)
+    return game_videos
+
+
+def get_audio(game_data):
+    """This function converts the description text of a game into an audio file via TTS"""
+
+    # Check if there is a description
+    if 'detailed_description' not in game_data['data']:
+        logger.log('There is no detailed description for this game', module_name)
+        return None
+
+    # Set the name of the audio file
+    audio_file_name = os.path.join(tempfile.gettempdir(), time.strftime("%Y%m%d-%H%M%S")) + '.wav'
+
+    # Get a dict ready to save the audio
+    audio_clips = []
+
+    # Get a variable ready to save the final file
+    audio_clip = audio_file_name
+
+    # Create the audio clips
+    with wave.open(audio_file_name, 'wb') as complete_audio:
+
+        # Set the params to not set
+        params_set = 0
+
+        # Get the ssml for each text
+        for text in generate_ssml_from_html(game_data['data']['detailed_description']):
+
+            # Create the audio for each text
+            audio_clips.append(generateAudio(text[0]))
+
+            # Write the partial audio clips
+            with wave.open(audio_clips[-1], 'rb') as partial_audio:
+
+                # If the params arn´t set, set them
+                if params_set == 0:
+                    complete_audio.setparams(partial_audio.getparams())
+                    params_set = 1
+
+                # Write the partial audio into the complete audio clip
+                complete_audio.writeframes(partial_audio.readframes(partial_audio.getnframes()))
+
+    # Return the audio (path to the audio, located in tmp)
+    return [audio_clip, audio_clips]
+
+
+def fetch(game_id, params=None):
+    """Fetches images, videos and generates audio from the description of a game"""
+
+    # Global variables
+    global app_detail_url
+    global steam_params
+
+    # Convert the id to string
     if isinstance(game_id, int):
         game_id = str(game_id)
 
-    global app_detail_url
+    # The url to get detailed information about a game via the steam api
     url = app_detail_url + game_id
 
+    # Dict to save all the fetched data
     game_resources = dict(
         images=[],
         videos=[],
         audio=[None, []]
     )
 
-    global steam_params
-
+    # Get the data of a specific game
     data = requests.get(url=url, params=steam_params).json()
 
-    # *****************************************
-    #                Images
-    # ****************************************
-    if not du.is_debugging_option_enabled(args, "no_image"):
-        for x in data[game_id]['data']['screenshots']:
-            logger.log_download(x['path_full'], 'Image', module_name)
-            game_resources['images'].append(urllib.request.urlretrieve(x['path_full'], None, show_progress)[0])
-            if ((args is not None) and "debugging" in args) and ("image_cap" in args["debugging"] and len(game_resources['images']) == args["debugging"]["image_cap"]): # this is copied for videos. We might want to make this a function. [Malte]
-                break
+    # Set the limit parameters
+    image_limit = -1
+    video_limit = -1
+    no_audio = False
 
-    # ****************************************
-    #                Videos
-    # ****************************************
-    if not du.is_debugging_option_enabled(args, "no_video"):
-        for x in data[game_id]['data']['movies']:
-            logger.log_download(x['webm']['max'], 'Video', module_name)
-            game_resources['videos'].append(urllib.request.urlretrieve(x['webm']['max'], None, show_progress)[0])
-            if ((args is not None) and "debugging" in args) and ("video_cap" in args["debugging"] and len(game_resources['videos']) == args["debugging"]["video_cap"]):
-                break
+    # Set the image limits if set in the params
+    if 'image_limit' in params:
+        image_limit = params['image_limit']
 
-    # ****************************************
-    #                Audio
-    # ****************************************
-    if not du.is_debugging_option_enabled(args, "no_audio"):
-        game_resources['audio'][0] = os.path.join(tempfile.gettempdir(), time.strftime("%Y%m%d-%H%M%S"))+'.wav'
-        with wave.open(game_resources['audio'][0], 'wb') as out:
-            params_set = 0
-            for x in generate_ssml_from_html(data[game_id]['data']['detailed_description']):
-                game_resources['audio'][1].append(generateAudio(x[0]))
-                with wave.open(game_resources['audio'][1][-1], 'rb') as w:
-                    if params_set == 0:
-                        out.setparams(w.getparams())
-                        params_set = 1
-                    out.writeframes(w.readframes(w.getnframes()))
-                if ((args is not None) and "debugging" in args) and ("audio_cap" in args["debugging"] and len(game_resources['audio'][1]) == args["debugging"]["audio_cap"]):
-                    break
+    # Set the video limits if set in the params
+    if 'video_limit' in params:
+        video_limit = params['video_limit']
 
+    # Set if audio should be processed
+    if 'no_audio' in params:
+        no_audio = params['no_audio']
+
+    # Download the images
+    game_resources['images'] = get_images(data[game_id], image_limit)
+
+    # Download the videos
+    game_resources['videos'] = get_videos(data[game_id], video_limit)
+
+    # Generate the audio
+    if not no_audio:
+        game_resources['audio'] = get_audio(data[game_id])
+
+    # Return the fetched data
     return game_resources
 
 
