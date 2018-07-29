@@ -5,7 +5,7 @@ import os
 
 
 def generate_audio_from_text(ssml):
-    """MBE"""
+    """This function uses the gtts from google to create an audio file from text"""
 
     # Create an environment variable, which is needed for the tts to work properly
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'./service_account.json'

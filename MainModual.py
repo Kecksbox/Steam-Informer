@@ -44,9 +44,13 @@ debugging = dict(
         compose_video=True,  # Activates(True) or deactivates(False) the composing of the final video
 
         # Params for uploader
-        upload_trailer=True,  # Activates(True) or deactivates(False) the upload of the trailers
+        upload_trailer=False,  # Activates(True) or deactivates(False) the upload of the trailers
         upload_composed_video=True,  # Activates(True) or deactivates(False) the upload of the final video
 )
+
+# To get the nltk 'Punkt' error out of the way, uncomment the two lines below ones
+# import nltk
+# nltk.download('punkt')
 
 module_name = 'mainModule'
 
@@ -74,7 +78,14 @@ du.run_cleaner(steam_params, game_resources)  # MBE
     
     Gegebenenfalls sollten wir drüber nachdenken die Limiter in eigene Funktion kabseln
     
-    Wir müssen schauen, dass wir auch die englischen Videos herruntergeladen bekommen"""
+    Wir müssen schauen, dass wir auch die englischen Videos herruntergeladen bekommen
+    
+    Welche Kategorie brauchen unsere videos? Siehe die 'category' in video file uploader
+    
+    Überleg mal eine Datenstruktur mit allen Informationen durch die Piepeline zu schicken,
+    möglichwerweise sollte man dann über einen rewrite und eine gute Kapselung nachdenken
+    
+    Es stimmt etwas mit den Bildern nicht, sie scheinen gezoomt zu werden."""
 
 # +++++ Handle the trailers +++++
 if debugging['upload_trailer']:
@@ -84,7 +95,7 @@ if debugging['upload_trailer']:
 
 
 # +++++ Handle the composed video +++++
-if game_resources['compose_video']:
+if debugging['compose_video']:
     # Compose the final video
     composed_video = composer.compose(game_resources, steam_params)
 
@@ -92,6 +103,6 @@ if game_resources['compose_video']:
     du.run_cleaner(steam_params, composed_video)
 
     # If activated, upload the composed video to the youtube channel
-    if game_resources['upload_composed_video']:
+    if debugging['upload_composed_video']:
         youtubeUploader.upload(composed_video, steam_params)
         steamScrapper.set_game_as_processed(game_id)
